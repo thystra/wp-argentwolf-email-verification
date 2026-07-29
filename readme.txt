@@ -1,10 +1,10 @@
 === ArgentWolf Email Verification ===
-Contributors: wolfandraven
+Contributors: thystra
 Tags: email verification, account activation, registration, user verification
 Requires at least: 6.1
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,10 @@ The error action receives a stable error code and a context array. It lets a log
 
 == Upgrade Notice ==
 
+= 0.3.3 =
+
+Metadata-only release correcting WordPress.org contributor and plugin-author attribution.
+
 = 0.3.2 =
 
 Maintenance release documenting two intentional, bounded user-meta queries for WordPress Plugin Check.
@@ -150,6 +154,13 @@ Maintenance release documenting two intentional, bounded user-meta queries for W
 Maintenance release for WordPress Plugin Check compliance and WordPress.org submission preparation.
 
 == Changelog ==
+
+= 0.3.3 =
+
+* Changed the WordPress.org contributor username to `thystra`.
+* Changed the plugin author name to Alan Johnson.
+* Retained the GitHub profile as the Author URI.
+* No runtime behavior, settings, verification state, or data storage changed.
 
 = 0.3.2 =
 

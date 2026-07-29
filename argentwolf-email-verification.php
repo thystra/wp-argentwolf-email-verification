@@ -3,10 +3,10 @@
  * Plugin Name: ArgentWolf Email Verification
  * Plugin URI: https://github.com/thystra/wp-argentwolf-email-verification
  * Description: Keeps newly self-registered accounts inactive until the user verifies the registered email address. Verification is processed locally through WordPress and wp_mail().
- * Version: 0.3.2
+ * Version: 0.3.3
  * Requires at least: 6.1
  * Requires PHP: 7.4
- * Author: ArgentWolf
+ * Author: Alan Johnson
  * Author URI: https://github.com/thystra
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class ArgentWolf_Email_Verification {
-	private const VERSION            = '0.3.2';
+	private const VERSION            = '0.3.3';
 	private const OPTION_INITIALIZED = 'wrav_ev_initialized';
 	private const OPTION_SETTINGS    = 'wrav_ev_settings';
 

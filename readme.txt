@@ -1,134 +1,126 @@
-=== Wolf & Raven Local Email Verification ===
+=== ArgentWolf Email Verification ===
 Contributors: wolfandraven
-Tags: email verification, account activation, registration
+Tags: email verification, account activation, registration, user verification
 Requires at least: 6.1
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Keeps newly self-registered WordPress accounts inactive until the owner clicks a one-time email verification link. All processing occurs locally in WordPress and through wp_mail(). The plugin makes no API calls and sends no registration data to a third-party verification service.
+Require newly self-registered users to verify their email address before the WordPress account becomes active.
 
-== Behavior ==
+== Description ==
 
-* Existing users are marked verified on the plugin's first activation.
-* Accounts created by a logged-in administrator or WP-CLI are automatically verified.
+ArgentWolf Email Verification keeps newly self-registered WordPress accounts inactive until the account owner confirms the registered email address.
+
+All verification is processed locally by WordPress and `wp_mail()`. The plugin does not use an external verification API and does not send registration data to a third-party verification service.
+
+Features include:
+
+* Existing accounts are preserved as verified on first activation.
+* Administrator-created and WP-CLI-created accounts are automatically verified.
 * New self-registered accounts are marked Pending.
-* WordPress's normal new-user email is suppressed while the account is pending.
-* A one-time verification link is sent through wp_mail().
-* Pending users cannot authenticate with a normal password or an Application Password.
-* Native WordPress registrants are taken directly to the Set Password screen after verification.
-* Other registration forms are taken to the login page after verification.
-* Users can request another verification email without revealing whether an account exists.
-* Administrators can see Pending/Verified status in Users and can manually verify or resend.
-* Pending accounts are deleted after 7 days by default; the retention period is configurable from 0 to 365 days.
-* Cleanup runs daily through WP-Cron, is available manually, and skips administrators and accounts that own WordPress content.
-* Normal wp_mail() messages to pending account addresses are suppressed by default.
-* In mixed-recipient messages, pending addresses are removed while other recipients still receive the message.
-* The plugin's own verification email bypasses pending-recipient suppression.
+* A one-time verification link is sent through `wp_mail()`.
+* Pending users cannot sign in with a password or an Application Password.
+* WordPress's normal new-user message is suppressed while pending.
+* Users can request a replacement verification message without exposing whether an account exists.
+* Administrators can view status, verify an account, or resend verification.
+* Stale pending accounts can be removed automatically after a configurable number of days.
+* Cleanup protects administrators and accounts that own WordPress content.
+* Ordinary `wp_mail()` messages to pending users can be suppressed.
+* Mixed-recipient messages continue to verified and outside recipients.
+* Privacy-policy guidance and personal-data tools are included.
+* A public verification-status API is available to compatible plugins.
 
-== Upgrade from 0.1.0 ==
+ArgentWolf Email Verification does not replace SMTP, inbox-delivery monitoring, bounce handling, or newsletter subscriber management.
 
-1. In WordPress, open Plugins > Add New > Upload Plugin.
-2. Upload wolf-raven-email-verification-0.2.0.zip.
-3. Choose Replace current with uploaded when WordPress detects the existing plugin.
-4. The plugin remains configured for the existing verified and pending accounts.
-5. Open Settings > Email Verification and review the new settings.
+== Installation ==
 
-No deactivate/reactivate step is required. The plugin performs its 0.2.0 migration while active.
-
-== Settings ==
-
-Settings > Email Verification
-
-Delete pending accounts after
-    Default: 7 days. Enter 0 to disable automatic deletion. Valid range: 0 to 365 days.
-
-Other outbound email
-    Enabled by default. Suppresses normal wp_mail() messages to pending account addresses. This covers WordPress core and plugins that use wp_mail(), but cannot intercept a plugin that sends through its own external API or transport.
-
-Cleanup status
-    Shows the current pending-account count and the next scheduled cleanup. Includes a Run cleanup now button for testing or immediate maintenance.
-
-== Suggested upgrade test ==
-
-1. Keep an existing administrator session open.
-2. Upload and replace the 0.1.0 plugin with 0.2.0.
+1. Upload the `argentwolf-email-verification` folder to `/wp-content/plugins/`, or install the plugin ZIP through Plugins > Add New > Upload Plugin.
+2. Activate ArgentWolf Email Verification.
 3. Open Settings > Email Verification.
-4. Confirm retention is 7 days and outbound suppression is enabled.
-5. Confirm your already verified test account still shows Verified under Users.
-6. Create a new test registration and confirm its verification message still arrives.
-7. Before verification, trigger any available site notification to that user and verify that no message is sent.
-8. Verify the account and repeat the notification; it should now be sent normally.
-9. For cleanup testing, temporarily set retention to 1 day and use a deliberately old pending account, or adjust that test account's user_registered value in a staging copy. Click Run cleanup now.
+4. Review pending-account retention and outbound-mail suppression.
+5. Test registration and verification on a staging site before enabling public registration.
 
-On nidhoggur, the existing mail log can be watched with:
+When upgrading from the former main filename, use a controlled replacement. Keep an administrator session open, back up the site, install and activate the canonical build, confirm existing account states, and remove any duplicate old plugin copy.
 
-    sudo tail -f /var/log/maillog
+== Frequently Asked Questions ==
 
-If WP-Cron is disabled in wp-config.php, invoke wp-cron.php from the server's real cron or use WP-CLI so daily cleanup runs reliably.
+= Does the plugin verify whether a mailbox technically exists? =
 
-== Security and safety notes ==
+No. It verifies that someone receiving mail at the address can use a one-time link. It does not query an external mailbox-validation service.
 
-* Tokens contain 256 bits of randomness.
-* Only an HMAC-SHA256 token hash is stored in user metadata.
-* Links expire after 48 hours by default.
-* A newly requested link replaces the previous link.
-* Public resend requests are limited to one accepted request every five minutes per pending account.
-* Public resend responses do not disclose whether an account exists.
-* Existing administrators are exempt from login blocking and cleanup to prevent accidental lockout.
-* Accounts that own WordPress posts are skipped during automated cleanup.
-* Mail suppression returns a successful handled result for pending-only messages so notification plugins do not repeatedly retry an intentionally discarded message.
-* Accounts without this plugin's explicit Pending marker are treated as verified, preventing accidental lockouts after an interrupted upgrade or temporary plugin deactivation.
+= Does the plugin send data to an external API? =
 
-== Developer filters/actions ==
+No. Verification is handled locally through WordPress and the site's configured `wp_mail()` transport.
 
-wrav_ev_link_lifetime
-    Verification lifetime in seconds. Default: 48 hours. Minimum: 1 hour.
+= What happens to existing users when the plugin is first activated? =
 
-wrav_ev_resend_cooldown
-    Public resend cooldown in seconds. Default: 5 minutes. Minimum: 1 minute.
+Existing users are marked verified so activation does not lock them out.
 
-wrav_ev_cleanup_batch_size
-    Maximum pending accounts examined per daily cleanup. Default: 500. Range enforced: 1 to 5000.
+= Which new users are automatically verified? =
 
-wrav_ev_auto_verify_new_user
-    Boolean controlling whether a newly created user should be automatically verified.
+Accounts created through WP-CLI, administrators, and accounts deliberately created by a logged-in user with permission to create users are trusted. Other new registrations are pending by default.
 
-wrav_ev_email_subject
-    Verification email subject.
+= Can pending users receive other WordPress emails? =
 
-wrav_ev_email_message
-    Plain-text verification email message.
+By default, normal `wp_mail()` messages to pending account addresses are suppressed. The verification message is always allowed. Mixed-recipient messages continue to other recipients.
 
-wrav_ev_after_verification_url
-    Local redirect URL after successful verification.
+= Does a successful wp_mail() result mean delivery occurred? =
 
-wrav_ev_should_delete_pending_user
-    Boolean controlling deletion of an individual expired pending account.
+No. WordPress only reports whether the mailer accepted the request. This plugin may also intentionally preempt a pending-only message and report it as handled. Compatible plugins should call the public verification API before sending.
 
-wrav_ev_user_verified
-    Action fired after an account is verified.
+= What if WP-Cron is disabled? =
 
-wrav_ev_pending_user_deleted
-    Action fired after an expired pending account is deleted.
+Invoke WordPress cron from a real scheduler or WP-CLI so pending-account cleanup runs reliably.
 
-wrav_ev_pending_user_cleanup_skipped
-    Action fired when cleanup skips a pending account.
+= Where can I report issues or contribute? =
 
-wrav_ev_mail_suppressed
-    Action fired when a pending-only wp_mail() message is intentionally suppressed.
+Use the project repository linked from the plugin settings page.
+
+== Privacy ==
+
+The plugin stores verification status, a keyed hash of the current one-time token, token expiration, verification-message time, and limited registration-workflow state in WordPress user metadata.
+
+Token hashes are never included in personal-data exports. Privacy erasure removes expendable token and message metadata where safe, but retains verification status needed to prevent a pending account from becoming active through erasure.
+
+Verification emails are sent through the site's configured `wp_mail()` transport. The privacy practices of that transport or mail provider are controlled by the site administrator.
+
+== Developer API ==
+
+`argentwolf_email_verification_is_user_verified( int $user_id ): bool`
+
+Returns `true` only for an existing user whose account is not pending.
+
+`argentwolf_email_verification_get_user_verification_status( int $user_id ): string`
+
+Returns `verified`, `pending`, or `unknown`.
+
+The plugin also emits canonical lifecycle actions for verification, cleanup, and pending-mail suppression. Legacy `wrav_ev_*` identifiers remain available during the compatibility period.
 
 == Changelog ==
 
+= 0.3.0 =
+
+* Renamed the public plugin, main file, class, text domain, and documentation to ArgentWolf Email Verification.
+* Added a stable public verification-status API for companion plugins.
+* Added canonical lifecycle actions while retaining legacy aliases.
+* Added a GitHub project and development-support link to the settings screen.
+* Added privacy-policy, personal-data exporter, and eraser integration.
+* Removed private infrastructure details from public documentation.
+* Added release validation, packaging, architecture, and milestone documentation.
+* Retained legacy option and user-metadata keys to preserve existing account state.
+
 = 0.2.0 =
-* Added configurable automatic deletion of stale pending accounts; default 7 days.
-* Added a daily WP-Cron cleanup event and a manual cleanup button.
-* Added a Settings > Email Verification page with pending count and schedule status.
-* Added generic suppression of wp_mail() messages to pending account addresses.
-* Added mixed-recipient filtering so verified and outside recipients still receive mail.
-* Added safety exclusions for administrators and pending accounts that own WordPress content.
-* Treat accounts without an explicit pending marker as verified to avoid accidental lockouts.
-* Added active-plugin upgrade handling without requiring deactivation/reactivation.
+
+* Added configurable deletion of stale pending accounts.
+* Added daily WP-Cron cleanup and a manual cleanup action.
+* Added the settings screen and pending-account status.
+* Added suppression and filtering of ordinary mail to pending accounts.
+* Added safety exclusions for administrators and content owners.
+* Added active-plugin upgrade handling.
 
 = 0.1.0 =
+
 * Initial test release.

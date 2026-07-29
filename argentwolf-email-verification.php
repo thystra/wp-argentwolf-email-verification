@@ -3,7 +3,7 @@
  * Plugin Name: ArgentWolf Email Verification
  * Plugin URI: https://github.com/thystra/wp-argentwolf-email-verification
  * Description: Keeps newly self-registered accounts inactive until the user verifies the registered email address. Verification is processed locally through WordPress and wp_mail().
- * Version: 0.3.0
+ * Version: 0.3.2
  * Requires at least: 6.1
  * Requires PHP: 7.4
  * Author: ArgentWolf
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class ArgentWolf_Email_Verification {
-	private const VERSION            = '0.3.0';
+	private const VERSION            = '0.3.2';
 	private const OPTION_INITIALIZED = 'wrav_ev_initialized';
 	private const OPTION_SETTINGS    = 'wrav_ev_settings';
 
@@ -348,6 +348,16 @@ final class ArgentWolf_Email_Verification {
 	}
 
 	/**
+	 * Report an operational error to logging or monitoring integrations.
+	 *
+	 * @param string $code    Stable error identifier.
+	 * @param array  $context Error context supplied to listeners.
+	 */
+	private static function report_error( string $code, array $context = array() ): void {
+		do_action( 'argentwolf_email_verification_error', $code, $context );
+	}
+
+	/**
 	 * Generate a fresh one-time token and send it through wp_mail().
 	 */
 	private static function send_verification_email( int $user_id, bool $ignore_cooldown = false ): bool {
@@ -360,11 +370,16 @@ final class ArgentWolf_Email_Verification {
 		if ( ! $ignore_cooldown && $last_sent > 0 && ( time() - $last_sent ) < self::resend_cooldown() ) {
 			return false;
 		}
-
 		try {
 			$token = bin2hex( random_bytes( 32 ) );
 		} catch ( Exception $exception ) {
-			error_log( 'ArgentWolf Email Verification: secure token generation failed: ' . $exception->getMessage() );
+			self::report_error(
+				'secure_token_generation_failed',
+				array(
+					'user_id' => $user_id,
+					'message' => $exception->getMessage(),
+				)
+			);
 			return false;
 		}
 
@@ -373,7 +388,6 @@ final class ArgentWolf_Email_Verification {
 		update_user_meta( $user_id, self::META_TOKEN_HASH, self::token_hash( $token ) );
 		update_user_meta( $user_id, self::META_TOKEN_EXPIRES, (string) $expires );
 		update_user_meta( $user_id, self::META_SENT_AT, (string) time() );
-
 		$verification_url = add_query_arg(
 			array(
 				'wrav_ev_action' => self::VERIFY_ACTION,
@@ -391,8 +405,11 @@ final class ArgentWolf_Email_Verification {
 			__( '[%s] Verify your email address', 'argentwolf-email-verification' ),
 			$site_name
 		);
-
-		$message  = sprintf( __( "Hello %s,", 'argentwolf-email-verification' ), $user->display_name ?: $user->user_login ) . "\n\n";
+		$message  = sprintf(
+			/* translators: %s is the user's display name or login name. */
+			__( 'Hello %s,', 'argentwolf-email-verification' ),
+			$user->display_name ?: $user->user_login
+		) . "\n\n";
 		$message .= sprintf(
 			/* translators: %s is the website name. */
 			__( 'Thank you for registering at %s. Your account is currently inactive.', 'argentwolf-email-verification' ),
@@ -406,12 +423,10 @@ final class ArgentWolf_Email_Verification {
 			$hours
 		) . "\n\n";
 		$message .= __( 'If you did not create this account, you can ignore this message.', 'argentwolf-email-verification' ) . "\n";
-
 		$subject = (string) apply_filters( 'argentwolf_email_verification_email_subject', $subject, $user, $verification_url );
 		$subject = (string) apply_filters( 'wrav_ev_email_subject', $subject, $user, $verification_url );
 		$message = (string) apply_filters( 'argentwolf_email_verification_email_message', $message, $user, $verification_url, $expires );
 		$message = (string) apply_filters( 'wrav_ev_email_message', $message, $user, $verification_url, $expires );
-
 		self::$allow_pending_recipient_mail = true;
 		try {
 			$sent = wp_mail( $user->user_email, $subject, $message );
@@ -420,7 +435,12 @@ final class ArgentWolf_Email_Verification {
 		}
 
 		if ( ! $sent ) {
-			error_log( sprintf( 'ArgentWolf Email Verification: wp_mail() failed for user ID %d.', $user_id ) );
+			self::report_error(
+				'verification_email_send_failed',
+				array(
+					'user_id' => $user_id,
+				)
+			);
 		}
 
 		return $sent;
@@ -904,33 +924,37 @@ final class ArgentWolf_Email_Verification {
 		if ( $days < 1 ) {
 			return $result;
 		}
-
 		$batch_size = (int) apply_filters( 'argentwolf_email_verification_cleanup_batch_size', 500 );
 		$batch_size = (int) apply_filters( 'wrav_ev_cleanup_batch_size', $batch_size );
 		$batch_size = max( 1, min( 5000, $batch_size ) );
 		$cutoff     = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
-
-		global $wpdb;
-		$user_ids = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT DISTINCT u.ID
-				FROM {$wpdb->users} AS u
-				INNER JOIN {$wpdb->usermeta} AS um ON um.user_id = u.ID
-				WHERE um.meta_key = %s
-				  AND um.meta_value = '0'
-				  AND u.user_registered <= %s
-				ORDER BY u.ID ASC
-				LIMIT %d",
-				self::META_VERIFIED,
-				$cutoff,
-				$batch_size
+		$user_ids   = get_users(
+			array(
+				'fields'        => 'ID',
+				'number'        => $batch_size,
+				'count_total'   => false,
+				'cache_results' => false,
+				'orderby'       => 'ID',
+				'order'         => 'ASC',
+				/*
+				 * Verification status is intentionally stored as user metadata. This bounded daily query selects pending accounts eligible for cleanup.
+				 */
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_key'      => self::META_VERIFIED,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'meta_value'    => '0',
+				'date_query'    => array(
+					array(
+						'before'    => $cutoff,
+						'inclusive' => true,
+					),
+				),
 			)
 		);
 
 		if ( empty( $user_ids ) ) {
 			return $result;
 		}
-
 		if ( ! function_exists( 'wp_delete_user' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/user.php';
 		}
@@ -947,13 +971,21 @@ final class ArgentWolf_Email_Verification {
 				++$result['skipped'];
 				continue;
 			}
-
-			$owns_content = (bool) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT 1 FROM {$wpdb->posts} WHERE post_author = %d LIMIT 1",
-					$user_id
+			$owned_content = get_posts(
+				array(
+					'author'                 => $user_id,
+					'post_type'              => array_values( get_post_types( array(), 'names' ) ),
+					'post_status'            => array_values( get_post_stati( array(), 'names' ) ),
+					'posts_per_page'         => 1,
+					'fields'                 => 'ids',
+					'orderby'                => 'ID',
+					'order'                  => 'ASC',
+					'cache_results'          => false,
+					'update_post_meta_cache' => false,
+					'update_post_term_cache' => false,
 				)
 			);
+			$owns_content = ! empty( $owned_content );
 
 			if ( $owns_content ) {
 				++$result['skipped'];
@@ -961,7 +993,6 @@ final class ArgentWolf_Email_Verification {
 				do_action( 'wrav_ev_pending_user_cleanup_skipped', $user_id, $user, 'owns_content' );
 				continue;
 			}
-
 			$should_delete = (bool) apply_filters( 'argentwolf_email_verification_should_delete_pending_user', true, $user, $cutoff );
 			$should_delete = (bool) apply_filters( 'wrav_ev_should_delete_pending_user', $should_delete, $user, $cutoff );
 			if ( ! $should_delete ) {
@@ -970,7 +1001,6 @@ final class ArgentWolf_Email_Verification {
 				do_action( 'wrav_ev_pending_user_cleanup_skipped', $user_id, $user, 'filtered' );
 				continue;
 			}
-
 			if ( wp_delete_user( $user_id ) ) {
 				++$result['deleted'];
 				do_action( 'argentwolf_email_verification_pending_user_deleted', $user_id, $user );
@@ -1005,13 +1035,23 @@ final class ArgentWolf_Email_Verification {
 	}
 
 	private static function pending_account_count(): int {
-		global $wpdb;
-		return (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(DISTINCT user_id) FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value = '0'",
-				self::META_VERIFIED
+		$query = new WP_User_Query(
+			array(
+				'fields'        => 'ID',
+				'number'        => 1,
+				'count_total'   => true,
+				'cache_results' => false,
+				/*
+				 * Verification status is intentionally stored as user metadata. This small administrative query is used only to display the pending count.
+				 */
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_key'      => self::META_VERIFIED,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'meta_value'    => '0',
 			)
 		);
+
+		return (int) $query->get_total();
 	}
 
 	public static function add_privacy_policy_content(): void {

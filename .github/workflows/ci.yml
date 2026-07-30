@@ -1,0 +1,135 @@
+# File: .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '7.4'
+          - '8.4'
+          - '8.5'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Run PHP quality gates
+        run: composer test
+
+  wordpress:
+    name: WordPress 7.0.2 integration
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Subversion
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes subversion
+
+      - name: Install WordPress test environment
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_CORE_DIR: /tmp/wordpress
+        run: |
+          bash bin/install-wp-tests.sh \
+            wordpress_test \
+            root \
+            '' \
+            127.0.0.1:3306 \
+            7.0.2
+          test -r "${WP_TESTS_DIR}/includes/functions.php"
+          test -r "${WP_TESTS_DIR}/includes/bootstrap.php"
+          test -r "${WP_TESTS_DIR}/wp-tests-config.php"
+          test -r "${WP_CORE_DIR}/wp-settings.php"
+
+      - name: Run WordPress integration tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_CORE_DIR: /tmp/wordpress
+        run: composer test:integration
+
+  package:
+    name: Distribution package
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Build release package
+        run: bash scripts/build-release.sh
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          sha256sum -c argentwolf-email-verification-0.3.4.zip.sha256
+
+      - name: Upload package
+        uses: actions/upload-artifact@v6
+        with:
+          name: argentwolf-email-verification-0.3.4
+          path: |
+            dist/argentwolf-email-verification-0.3.4.zip
+            dist/argentwolf-email-verification-0.3.4.zip.sha256
+
+# EOF: .github/workflows/ci.yml

@@ -30,9 +30,9 @@
 - [x] Add `argentwolf_email_verification_get_user_verification_status()`.
 - [x] Add canonical verification, cleanup, and mail-suppression actions while
   retaining legacy aliases.
-- [ ] Add PHPUnit coverage for valid, pending, verified, and unknown user API
+- [x] Add PHPUnit coverage for valid, pending, verified, and unknown user API
   results.
-- [ ] Document a versioned deprecation plan for legacy public hooks.
+- [x] Document a versioned deprecation plan for legacy public hooks.
 - [ ] Integrate ArgentWolf Post Notifier exclusively through the public API.
 
 ## Milestone 3 — Settings and project support
@@ -69,7 +69,7 @@
 
 ## Milestone 6 — Automated testing and coding standards
 
-- [ ] Introduce PHPUnit with the WordPress test suite.
+- [x] Introduce PHPUnit with the WordPress test suite.
 - [ ] Test first activation with existing users.
 - [ ] Test administrator-created, WP-CLI-created, native self-registered, and
   third-party-form-created users.
@@ -105,9 +105,9 @@
 - [x] Add a deterministic release ZIP builder.
 - [x] Keep generated packages under ignored `dist/`.
 - [x] Add checksums to release output.
-- [ ] Add a GitHub Actions quality workflow after local standards checks pass.
-- [ ] Add reproducible release notes and an annotated tag procedure.
-- [ ] Confirm the built ZIP contains no contributor-only or personalized files.
+- [x] Add a GitHub Actions quality workflow after local standards checks pass.
+- [x] Add reproducible release notes and an annotated tag procedure.
+- [x] Confirm the built ZIP contains no contributor-only or personalized files.
 
 ## Milestone 9 — WordPress.org submission readiness
 

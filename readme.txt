@@ -4,7 +4,7 @@ Tags: email verification, account activation, registration, user verification
 Requires at least: 6.1
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ Maintenance release documenting two intentional, bounded user-meta queries for W
 Maintenance release for WordPress Plugin Check compliance and WordPress.org submission preparation.
 
 == Changelog ==
+
+= 0.3.4 =
+* Added WordPress integration coverage for the public verification API.
+* Tested verified, pending, missing-meta, unknown, deleted, and administrator users.
+* Tested the canonical successful-verification action.
+* Added Composer-based PHP validation and a GitHub Actions test matrix.
+* Documented the legacy public-hook deprecation and compatibility policy.
+* Synchronized the plugin version and WordPress.org Stable Tag.
 
 = 0.3.3 =
 

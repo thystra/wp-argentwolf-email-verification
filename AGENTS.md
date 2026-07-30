@@ -104,6 +104,8 @@ Before committing a release candidate:
 cd ~/src/wp-argentwolf-email-verification
 
 bash scripts/validate.sh
+composer validate --strict
+composer test
 git status --short --branch
 git diff --check
 git diff

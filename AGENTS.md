@@ -10,6 +10,7 @@
 - Main plugin file: `argentwolf-email-verification.php`
 - Text domain: `argentwolf-email-verification`
 - License: GPL-2.0-or-later
+- Minimum supported PHP version: PHP 8.4
 
 Do not shorten the public product name to “Argent Email Verification” or restore
 the former Wolf & Raven product name.

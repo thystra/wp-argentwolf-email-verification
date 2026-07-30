@@ -5,7 +5,7 @@
  * Description: Keeps newly self-registered accounts inactive until the user verifies the registered email address. Verification is processed locally through WordPress and wp_mail().
  * Version: 0.3.4
  * Requires at least: 6.1
- * Requires PHP: 7.4
+ * Requires PHP: 8.4
  * Author: Alan Johnson
  * Author URI: https://github.com/thystra
  * License: GPL-2.0-or-later

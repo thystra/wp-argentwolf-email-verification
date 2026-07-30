@@ -81,14 +81,14 @@ $assert(
 	'Legacy verification metadata must remain encapsulated.'
 );
 $assert(
-	'>=7.4' === ( $composer['require']['php'] ?? null ),
-	'Composer runtime floor must remain PHP 7.4.'
+	'>=8.4' === ( $composer['require']['php'] ?? null ),
+	'Composer runtime floor must be PHP 8.4 or later.'
 );
 $assert(
-	'7.4.0' === (
+	'8.4.0' === (
 		$composer['config']['platform']['php'] ?? null
 	),
-	'Composer dependency resolution must target PHP 7.4.'
+	'Composer dependency resolution must target PHP 8.4.'
 );
 $assert(
 	'^9.6.16' === (
@@ -97,12 +97,16 @@ $assert(
 	'WordPress 7.0 integration must use PHPUnit 9.6.'
 );
 $assert(
-	str_contains( (string) $workflow, "php-version: '7.4'" ),
-	'CI must exercise the declared PHP floor.'
+	str_contains( (string) $workflow, "php-version: '8.4'" ),
+	'CI must use PHP 8.4 for fixed-version jobs.'
 );
 $assert(
 	str_contains( (string) $workflow, "- '8.5'" ),
 	'CI must exercise PHP 8.5.'
+);
+$assert(
+	! str_contains( (string) $workflow, "- '7.4'" ),
+	'CI must not advertise unsupported PHP 7.4.'
 );
 $assert(
 	str_contains(

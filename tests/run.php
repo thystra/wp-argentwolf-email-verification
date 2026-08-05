@@ -41,12 +41,12 @@ preg_match(
 );
 
 $assert(
-	'0.3.4' === ( $header[1] ?? null ),
-	'Plugin header version must be 0.3.4.'
+	'1.0.0' === ( $header[1] ?? null ),
+	'Plugin header version must be 1.0.0.'
 );
 $assert(
-	'0.3.4' === ( $stable[1] ?? null ),
-	'Stable Tag must be 0.3.4.'
+	'1.0.0' === ( $stable[1] ?? null ),
+	'Stable Tag must be 1.0.0.'
 );
 $assert(
 	str_contains(

@@ -118,13 +118,13 @@ main() {
     if command -v composer >/dev/null 2>&1; then
         (
             cd "${root}" &&
-            COMPOSER_ROOT_VERSION='0.3.4' composer validate --strict
+            COMPOSER_ROOT_VERSION='1.0.0' composer validate --strict
         ) || return 1
 
         if [[ -r "${root}/vendor/autoload.php" ]]; then
             (
                 cd "${root}" &&
-                COMPOSER_ROOT_VERSION='0.3.4' composer test
+                COMPOSER_ROOT_VERSION='1.0.0' composer test
             ) || return 1
         fi
     fi

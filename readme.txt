@@ -4,7 +4,7 @@ Tags: email verification, account activation, registration, user verification
 Requires at least: 6.1
 Tested up to: 7.0
 Requires PHP: 8.4
-Stable tag: 0.3.4
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,21 +141,21 @@ The error action receives a stable error code and a context array. It lets a log
 
 == Upgrade Notice ==
 
-= 0.3.3 =
+= 1.0.0 =
 
-Metadata-only release correcting WordPress.org contributor and plugin-author attribution.
-
-= 0.3.2 =
-
-Maintenance release documenting two intentional, bounded user-meta queries for WordPress Plugin Check.
-
-= 0.3.1 =
-
-Maintenance release for WordPress Plugin Check compliance and WordPress.org submission preparation.
+Initial public WordPress.org release. Existing installations retain their verification settings and user metadata.
 
 == Changelog ==
 
+= 1.0.0 =
+
+* Initial public release on the WordPress.org Plugin Directory.
+* Promoted the reviewed 0.3.4 codebase to semantic version 1.0.0 without changing verification behavior or stored data.
+* Requires WordPress 6.1 or later and PHP 8.4 or later.
+* Includes public verification APIs, privacy integration, configurable cleanup, pending-recipient mail suppression, and administrator controls.
+
 = 0.3.4 =
+
 * Raised the minimum supported PHP version to 8.4.
 * Added WordPress integration coverage for the public verification API.
 * Tested verified, pending, missing-meta, unknown, deleted, and administrator users.

@@ -121,14 +121,14 @@ jobs:
       - name: Verify checksum
         run: |
           cd dist
-          sha256sum -c argentwolf-email-verification-0.3.4.zip.sha256
+          sha256sum -c argentwolf-email-verification-1.0.0.zip.sha256
 
       - name: Upload package
         uses: actions/upload-artifact@v6
         with:
-          name: argentwolf-email-verification-0.3.4
+          name: argentwolf-email-verification-1.0.0
           path: |
-            dist/argentwolf-email-verification-0.3.4.zip
-            dist/argentwolf-email-verification-0.3.4.zip.sha256
+            dist/argentwolf-email-verification-1.0.0.zip
+            dist/argentwolf-email-verification-1.0.0.zip.sha256
 
 # EOF: .github/workflows/ci.yml
